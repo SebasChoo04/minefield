@@ -55,7 +55,7 @@ export default function MainScreen({ navigation }) {
     if (mines !== null) {
       let isThereBomb = JSON.stringify(mines[Math.ceil(currentPosition / 5) - 1][`column${currentPosition % 5}`])
         if (isThereBomb === 'true') {
-          setTimeout(() => setCurrentPosition(25), 251235670)
+          setTimeout(() => setCurrentPosition(25), 500)
       }
     }
     if (currentPosition !== 25 && started === false) {
