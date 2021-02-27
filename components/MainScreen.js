@@ -14,17 +14,21 @@ export default function MainScreen({ navigation }) {
   const [mines, setMines] = useState(null);
   const [started, setStarted] = useState(false);
 
+  //timer
   const intervalRef = useRef();
   const [timerSeconds, setTimerSeconds] = useState(0);
   
+  //Path Check
   const [possiblePath, setPossiblePath] = useState(null);
   const [hidden, setHidden] = useState(true);
   
+  //Form things
   const [bestName, setBestName] = useState('');
   const [bestTime, setBestTime] = useState(null);
   const [bestUnit, setBestUnit] = useState('');
 
-  const initialPosition = { position: 25 };
+  //useReducer
+  const initialPosition = 25;
   const [position, dispatch] = useReducer(reducer, initialPosition);
  
   function reducer(state, action) {
@@ -33,7 +37,6 @@ export default function MainScreen({ navigation }) {
         if (Math.ceil(state / 5) === 1) {
           return state;
         } else {
-          alert('up')
           return state - 5;
         }
       case "DOWN":
@@ -61,10 +64,12 @@ export default function MainScreen({ navigation }) {
     }
   }
 
+  //When component mounts
   useEffect(async() => {
     setMines(await randomField())
   }, [])
 
+  //When component mounts and unmounts (Firestore)
   useEffect(() => {
     const unsubscribe = firebase.firestore().collection('leaderboard').doc('latest').onSnapshot((doc) => {
       const leaderboard = doc.data()
@@ -80,6 +85,7 @@ export default function MainScreen({ navigation }) {
     };
   }, [])
 
+  //When component mounts and mines updates
   useEffect(() => {
     (async () => {
       if (mines != null) {
@@ -92,6 +98,7 @@ export default function MainScreen({ navigation }) {
     })()
   }, [mines])
 
+  //When component mounts and position updates
   useEffect(() => {
     if (mines !== null) {
       let isThereBomb = JSON.stringify(mines[Math.ceil(position / 5) - 1][`column${position % 5}`])
@@ -123,6 +130,7 @@ export default function MainScreen({ navigation }) {
     setPossiblePath(result)
     setStarted(false)
     dispatch({ type: "RESET" })
+    clearInterval(intervalRef.current)
     setTimerSeconds(0)
   }
 
@@ -138,11 +146,11 @@ export default function MainScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={{flexDirection: 'row'}}>
+      <View style={{ flexDirection: 'row' }}>
 
         <Text style={styles.title}> Minefield </Text>
 
-        <TouchableOpacity style={{marginLeft: 20}} onPress={reset}>
+        <TouchableOpacity style={{ marginLeft: 20 }} onPress={reset}>
           <Image style={styles.refreshImage} source={{uri: "https://cdn0.iconfinder.com/data/icons/essentials-solid/100/Refresh-512.png"}}/>
         </TouchableOpacity>
 
