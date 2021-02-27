@@ -6,19 +6,60 @@ import { styles } from '../functions/Styles';
 import checkPath from '../functions/PathCheck';
 import firebase from '../functions/FirebaseConfig';
 import MinesField from './MinesScreen';
+import { useReducer } from 'react';
 
 export default function MainScreen({ navigation }) {
 
+  //Set up
   const [mines, setMines] = useState(null);
-  const [currentPosition, setCurrentPosition] = useState(25);
   const [started, setStarted] = useState(false);
+
+  const intervalRef = useRef();
   const [timerSeconds, setTimerSeconds] = useState(0);
-  const [bestTime, setBestTime] = useState(null);
+  
   const [possiblePath, setPossiblePath] = useState(null);
   const [hidden, setHidden] = useState(true);
-  const intervalRef = useRef();
+  
   const [bestName, setBestName] = useState('');
+  const [bestTime, setBestTime] = useState(null);
   const [bestUnit, setBestUnit] = useState('');
+
+  const initialPosition = { position: 25 };
+  const [position, dispatch] = useReducer(reducer, initialPosition);
+ 
+  function reducer(state, action) {
+    switch (action.type) {
+      case "UP":
+        if (Math.ceil(state / 5) === 1) {
+          return state;
+        } else {
+          alert('up')
+          return state - 5;
+        }
+      case "DOWN":
+        if (Math.ceil(state / 5) === 5) {
+          return state;
+        } else {
+          return state + 5;
+        }
+      case "LEFT":
+        if (Math.ceil(state % 5) === 1) {
+          return state;
+        } else {
+          return state - 1;
+        }
+      case "RIGHT": 
+        if (Math.ceil(state % 5) === 0) {
+          return state;
+        } else {
+          return state + 1;
+        }
+      case 'RESET':
+        return 25;
+      default:
+        return state;
+    }
+  }
 
   useEffect(async() => {
     setMines(await randomField())
@@ -53,57 +94,25 @@ export default function MainScreen({ navigation }) {
 
   useEffect(() => {
     if (mines !== null) {
-      let isThereBomb = JSON.stringify(mines[Math.ceil(currentPosition / 5) - 1][`column${currentPosition % 5}`])
+      let isThereBomb = JSON.stringify(mines[Math.ceil(position / 5) - 1][`column${position % 5}`])
         if (isThereBomb === 'true') {
-          setTimeout(() => setCurrentPosition(25), 500)
+          setTimeout(() => dispatch({ type: "RESET" }), 500)
       }
     }
-    if (currentPosition !== 25 && started === false) {
+    if (position !== 25 && started === false) {
       const stopwatch = setInterval(() => setTimerSeconds((timerSeconds) => timerSeconds + 0.1), 100)
       intervalRef.current = stopwatch
       setStarted(true)
     }
-    if (currentPosition === 1) {
+    if (position === 1) {
       clearInterval(intervalRef.current)
       if (timerSeconds < bestTime || bestTime === null) {
         var newBest = timerSeconds.toFixed(1)
         setBestTime(newBest)
-        navigation.navigate("AddNewScore", {time: bestTime})
+        navigation.navigate("AddNewScore", { time: bestTime })
       }
     }
-  }, [currentPosition])
-  
-  function up() {
-    if (Math.ceil(currentPosition / 5) === 1) {
-      return
-    } else {
-      setCurrentPosition(currentPosition - 5)
-    }
-  }
-
-  function down() {
-    if (Math.ceil(currentPosition / 5) === 5) {
-      return
-    } else {
-      setCurrentPosition(currentPosition + 5)
-    }
-  }
-
-  function left() {
-    if (Math.ceil(currentPosition % 5) === 1) {
-      return
-    } else {
-      setCurrentPosition(currentPosition - 1)
-    }
-  }
-
-  function right() {
-    if (Math.ceil(currentPosition % 5) === 0) {
-      return
-    } else {
-      setCurrentPosition(currentPosition + 1)
-    }
-  }
+  }, [position])
 
   async function reset() {
     setMines(randomField())
@@ -113,7 +122,7 @@ export default function MainScreen({ navigation }) {
     }
     setPossiblePath(result)
     setStarted(false)
-    setCurrentPosition(25)
+    dispatch({ type: "RESET" })
     setTimerSeconds(0)
   }
 
@@ -139,7 +148,7 @@ export default function MainScreen({ navigation }) {
 
       </View>
 
-      <FieldGrid currentPosition={currentPosition} />
+      <FieldGrid currentPosition={position} />
 
       <Text>
         {possiblePath ? "" : "Warning: There is no possible path, please generate new path"}
@@ -162,19 +171,19 @@ export default function MainScreen({ navigation }) {
 
       <Text style={styles.title}> Controls </Text>
 
-      <TouchableOpacity onPress={up} style={styles.directionButton}>
+      <TouchableOpacity onPress={() => dispatch({ type: "UP" })} style={styles.directionButton}>
         <Text style={styles.controlButtonText}> Up </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={down} style={styles.directionButton}>
+      <TouchableOpacity onPress={() => dispatch({ type: "DOWN" })} style={styles.directionButton}>
         <Text style={styles.controlButtonText}> Down </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={left} style={styles.directionButton}>
+      <TouchableOpacity onPress={() => dispatch({ type: "LEFT" })} style={styles.directionButton}>
         <Text style={styles.controlButtonText}> Left </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={right} style={styles.directionButton}>
+      <TouchableOpacity onPress={() => dispatch({ type: "RIGHT" })} style={styles.directionButton}>
         <Text style={styles.controlButtonText}> Right </Text>
       </TouchableOpacity>
 
